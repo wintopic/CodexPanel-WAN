@@ -20,21 +20,32 @@ jobs:
       DEVICE_IDS: ${{ vars.DEVICE_IDS || '' }}
 
     steps:
+      - name: Skip deployment when Cloudflare secrets are absent
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
+        run: |
+          echo "CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not configured."
+          echo "Add both repository secrets, then re-run this workflow."
+
       - name: Check out repository
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         uses: actions/checkout@v4
 
       - name: Set up Node.js
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Install dependencies
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         run: npm install
 
       - name: Check Worker syntax
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         run: npm run check
 
       - name: Generate Wrangler configs
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         shell: bash
         run: |
           cat > wrangler.do.toml <<EOF
@@ -77,16 +88,20 @@ jobs:
           fi
 
       - name: Deploy Durable Object Worker
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         run: npx wrangler deploy --config wrangler.do.toml
 
       - name: Create Pages project if needed
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         run: npx wrangler pages project create "$PAGES_PROJECT_NAME" --production-branch main || true
 
       - name: Deploy Pages Worker
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         working-directory: pages
         run: npx wrangler pages deploy . --project-name "$PAGES_PROJECT_NAME" --branch main
 
       - name: Verify health endpoint
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
         shell: bash
         run: |
           for attempt in {1..12}; do

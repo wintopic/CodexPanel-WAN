@@ -448,6 +448,8 @@ export CODEX_RELAY_URL="https://codex.example.com"
 5. 部署 Pages advanced mode 入口。
 6. 访问 `/health` 做部署后检查。
 
+如果还没有配置 Cloudflare Secrets，workflow 会安全跳过部署并提示需要补齐 Secrets。
+
 ### GitHub Secrets
 
 在 GitHub 仓库设置里添加：
