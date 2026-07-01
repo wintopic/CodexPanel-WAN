@@ -1,0 +1,23 @@
+name = "codexpanel-wan-do"
+main = "src/relay-worker.mjs"
+compatibility_date = "2026-06-30"
+workers_dev = false
+
+[[durable_objects.bindings]]
+name = "RELAY_SESSION"
+class_name = "CodexRelaySession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CodexRelaySession"]
+
+[vars]
+# Optional. Comma-separated device allowlist. If omitted, any valid device id
+# can connect as an agent.
+# DEVICE_IDS = "my-mac,my-windows-pc"
+
+# Optional tuning values.
+# CLIENT_TIMEOUT_MS = "65000"
+# AGENT_POLL_TIMEOUT_MS = "25000"
+# AGENT_STALE_MS = "45000"
+# MAX_BODY_BYTES = "33554432"

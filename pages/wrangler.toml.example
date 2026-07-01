@@ -1,0 +1,19 @@
+name = "codexpanel-wan"
+compatibility_date = "2026-06-30"
+pages_build_output_dir = "."
+
+[[durable_objects.bindings]]
+name = "RELAY_SESSION"
+class_name = "CodexRelaySession"
+script_name = "codexpanel-wan-do"
+
+[vars]
+# Optional. Comma-separated device allowlist. If omitted, any valid device id
+# can connect as an agent.
+# DEVICE_IDS = "my-mac,my-windows-pc"
+
+# Optional tuning values. Keep these aligned with the Durable Object Worker.
+# CLIENT_TIMEOUT_MS = "65000"
+# AGENT_POLL_TIMEOUT_MS = "25000"
+# AGENT_STALE_MS = "45000"
+# MAX_BODY_BYTES = "33554432"

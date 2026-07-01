@@ -1,0 +1,21 @@
+{
+  "name": "codexpanel-wan",
+  "version": "1.0.0",
+  "description": "Cloudflare WAN relay for CodexPanel remote access.",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "private": false,
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "check": "node --check src/relay-worker.mjs && node --check pages/_worker.js",
+    "deploy:worker": "wrangler deploy --config wrangler.toml",
+    "deploy:do": "wrangler deploy --config wrangler.do.toml",
+    "deploy:pages": "cd pages && wrangler pages deploy . --project-name codexpanel-wan --branch main",
+    "deploy:pages:full": "npm run deploy:do && npm run deploy:pages"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

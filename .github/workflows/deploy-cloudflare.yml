@@ -1,0 +1,98 @@
+name: Deploy Cloudflare Relay
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DO_WORKER_NAME: ${{ vars.DO_WORKER_NAME || 'codexpanel-wan-do' }}
+      PAGES_PROJECT_NAME: ${{ vars.PAGES_PROJECT_NAME || 'codexpanel-wan' }}
+      DEVICE_IDS: ${{ vars.DEVICE_IDS || '' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check Worker syntax
+        run: npm run check
+
+      - name: Generate Wrangler configs
+        shell: bash
+        run: |
+          cat > wrangler.do.toml <<EOF
+          name = "${DO_WORKER_NAME}"
+          main = "src/relay-worker.mjs"
+          compatibility_date = "2026-06-30"
+          workers_dev = false
+
+          [[durable_objects.bindings]]
+          name = "RELAY_SESSION"
+          class_name = "CodexRelaySession"
+
+          [[migrations]]
+          tag = "v1"
+          new_sqlite_classes = ["CodexRelaySession"]
+
+          [vars]
+          EOF
+
+          cat > pages/wrangler.toml <<EOF
+          name = "${PAGES_PROJECT_NAME}"
+          compatibility_date = "2026-06-30"
+          pages_build_output_dir = "."
+
+          [[durable_objects.bindings]]
+          name = "RELAY_SESSION"
+          class_name = "CodexRelaySession"
+          script_name = "${DO_WORKER_NAME}"
+
+          [vars]
+          EOF
+
+          if [ -n "${DEVICE_IDS}" ]; then
+            {
+              echo "DEVICE_IDS = \"${DEVICE_IDS}\""
+            } >> wrangler.do.toml
+            {
+              echo "DEVICE_IDS = \"${DEVICE_IDS}\""
+            } >> pages/wrangler.toml
+          fi
+
+      - name: Deploy Durable Object Worker
+        run: npx wrangler deploy --config wrangler.do.toml
+
+      - name: Create Pages project if needed
+        run: npx wrangler pages project create "$PAGES_PROJECT_NAME" --production-branch main || true
+
+      - name: Deploy Pages Worker
+        working-directory: pages
+        run: npx wrangler pages deploy . --project-name "$PAGES_PROJECT_NAME" --branch main
+
+      - name: Verify health endpoint
+        shell: bash
+        run: |
+          for attempt in {1..12}; do
+            if curl -fsS "https://${PAGES_PROJECT_NAME}.pages.dev/health"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
